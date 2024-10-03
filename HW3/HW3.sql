@@ -43,3 +43,9 @@ fullname VARCHAR(50),
 city VARCHAR(50),
 state VARCHAR(2)
 );
+
+CREATE TABLE IF NOT EXISTS place(
+cid INT UNSIGNED,
+oid INT UNSIGNED,
+order_date DATE
+)
