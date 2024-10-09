@@ -1,11 +1,19 @@
 CREATE SCHEMA IF NOT EXISTS ECONOMY;
+USE ECONOMY;
 
 CREATE TABLE IF NOT EXISTS merchants(
-mid INT UNSIGNED PRIMARY KEY,
+mid INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
 name VARCHAR(50),
-category VARCHAR(50),
+city VARCHAR(50),
 state VARCHAR(2)
 );
+
+INSERT INTO merchants(name, city, state)
+VALUES
+('Paul', 'Philadelphia', 'PA'),
+('Michela', 'Camden', 'NJ'),
+('Antonio', 'Philadelphia', 'PA'),
+('Remi', 'Denvor', 'CO');
 
 CREATE TABLE IF NOT EXISTS products(
 pid INT UNSIGNED PRIMARY KEY,
