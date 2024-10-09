@@ -13,7 +13,12 @@ VALUES
 ('Paul', 'Philadelphia', 'PA'),
 ('Michela', 'Camden', 'NJ'),
 ('Antonio', 'Philadelphia', 'PA'),
-('Remi', 'Denvor', 'CO');
+('Remi', 'Denvor', 'CO'),
+('Felipe', 'Philadelphia', 'PA'),
+('Dave', 'Modesto', 'CA'),
+('Hector', 'Pinehurst', 'TX'),
+('Jaden', 'Lancaster', 'PA'),
+('Lydia', 'Richmond', 'VA');
 
 CREATE TABLE IF NOT EXISTS products(
 pid INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
@@ -25,11 +30,11 @@ description VARCHAR(255)
 INSERT INTO products(name, category, description)
 VALUES
 ('Printer', 'Computer', 'A device that prints virtual images on pieces of paper'),
-('Ethernet Adapter', 'Converts Ethernet wire into USB-A wired connection'),
+('Ethernet Adapter', 'Network', 'Converts Ethernet wire into USB-A wired connection'),
 ('Desktop', 'Computer', 'A stand-alone computer, usually really powerful but requires a keyboard, a mouse, and monitor'),
 ('Hard Drive', 'Computer', 'Either an SSD or HDD, used to store data in either Desktops or Laptops'),
 ('Router', 'Networking', 'Used for generating Wi-Fi connections for computers, usually requires a membership'),
-('Network Card', 'Networking', 'A card for computers that allows to send and recieve Wi-Fi connections')
+('Network Card', 'Networking', 'A card for computers that allows to send and recieve Wi-Fi connections'),
 ('Super Drive', 'Computer', 'A drive that allows for DVD/CDs to be inserted into and accessed via a computer'),
 ('Laptop', 'Computer', 'A computer that comes built in with a monitor, a mouse-like pad known a s a trackpad, and a keyboard!'),
 ('Monitor', 'Peripheral', 'A screen that can be attached to a computer to gain visual access to either a Desktop or a Laptop');
@@ -37,13 +42,25 @@ VALUES
 CREATE TABLE IF NOT EXISTS sell(
 mid INT UNSIGNED,
 pid INT UNSIGNED,
-name VARCHAR(50),
-category VARCHAR(50),
-state VARCHAR(2),
+price INT UNSIGNED,
+quantity_available INT UNSIGNED,
 FOREIGN KEY (mid) REFERENCES merchants(mid),
-FOREIGN KEY (pid) REFERENCES merchants(pid)
+FOREIGN KEY (pid) REFERENCES products(pid)
 );
 
+INSERT INTO sell(price, quantity_available)
+VALUES
+(200, 5),
+(30, 20),
+(1865, 3),
+(50, 26),
+(100, 12),
+(40, 34),
+(29, 4),
+(799, 17),
+(649, 43);
+
+select * from sell;
 CREATE TABLE IF NOT EXISTS orders(
 oid INT UNSIGNED,
 shipping_method VARCHAR(50),
