@@ -139,69 +139,15 @@ DELIMITER ;
 -- ******************************************************************
 -- execute the procedure
 -- ******************************************************************
+USE index50k;
 CALL generate_accounts50000();
-CALL generate_accounts100000();
-CALL generate_accounts150000();
-
-
-select count(*) from accounts;
-
-select * from accounts limit 10;
-
-select branch_name, count(*)
-from accounts
-group by branch_name
-order by branch_name;
-
-
--- ******************************************************************
-SHOW INDEXES from accounts;
--- ******************************************************************
-
-
--- ****************************************************************************************
--- This type of index will speed up queries that filter or search by the branch_name column.
--- *****************************************************************************************
-CREATE INDEX idx_branch_name ON accounts (branch_name);
--- DROP INDEX idx_branch_name ON accounts;
-
-SELECT count(*) FROM accounts WHERE branch_name = 'Downtown';
-
-
-
-
--- ****************************************************************************************
--- If you frequently run queries that filter or sort by both branch_name and account_type, 
--- creating a composite index on these two columns can improve performance.
--- ****************************************************************************************
-CREATE INDEX idx_branch_account_type ON accounts (branch_name, account_type);
--- DROP INDEX idx_branch_account_type ON accounts;
-
-SELECT count(*) FROM accounts 
-WHERE branch_name = 'Downtown' 
-AND account_type = 'Savings';
-
-
--- ****************************************************************************************
--- The EXPLAIN statement shows how MySQL executes a query and whether it is using indexes 
--- to find rows efficiently. By running EXPLAIN before and after creating an index, you can 
--- see whether the query plan changes and whether the index is being used.
--- ****************************************************************************************
-EXPLAIN SELECT count(*) FROM accounts 
-WHERE branch_name = 'Downtown'
-AND account_type = 'Savings';
-
-alter table accounts drop primary key;
-alter table accounts add primary key(account_num);
-
-
-
 -- ******************************************************************************************
 -- Timing analysis
 -- ******************************************************************************************
 -- Step 1: Capture the start time with microsecond precision (6)
 SET @start_time = NOW(6);
 
+SELECT count(*) FROM accounts  WHERE branch_name = 'Downtown' AND balance = 50000;
 -- Step 2: Run the query you want to measure
 SELECT count(*) FROM accounts 
 WHERE branch_name = 'Downtown'
@@ -214,3 +160,10 @@ SET @end_time = NOW(6);
 SELECT 
     TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time) AS execution_time_microseconds,
     TIMESTAMPDIFF(SECOND, @start_time, @end_time) AS execution_time_seconds;
+
+
+USE index100k;
+CALL generate_accounts100000();
+USE index150k;
+CALL generate_accounts150000();
+
