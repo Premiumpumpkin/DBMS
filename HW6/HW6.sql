@@ -1,27 +1,14 @@
 CREATE SCHEMA IF NOT EXISTS indexing;
+use indexing;
 -- when set, it prevents potentially dangerous updates and deletes
 set SQL_SAFE_UPDATES=0;
 
 -- when set, it disables the enforcement of foreign key constraints.
 set FOREIGN_KEY_CHECKS=0;
-
-/* **************************************************************************************** 
--- These control:
---     the maximum time (in seconds) that the client will wait while trying to establish a 
-	   connection to the MySQL server 
---     how long the client will wait for a response from the server once a request has 
-       been sent over
-**************************************************************************************** */
-SHOW SESSION VARIABLES LIKE '%timeout%';       
-SET GLOBAL mysqlx_connect_timeout = 600;
-SET GLOBAL mysqlx_read_timeout = 600;
-
-
-/* **************************************************************************************** */
 -- The DB where the accounts table is created
-use indexing;
-
-
+SHOW SESSION VARIABLES LIKE '%timeout%';       
+SET GLOBAL mysqlx_connect_timeout = 1600;
+SET GLOBAL mysqlx_read_timeout = 1600;
 
 -- Create the accounts table
 CREATE TABLE IF NOT EXISTS accounts (
@@ -48,7 +35,7 @@ BEGIN
   DECLARE account_type VARCHAR(50);
   
   -- Loop to generate 50,000 account records
-  WHILE i <= 50000 DO
+  WHILE i <= 100000 DO
     -- Randomly select a branch from the list of branches
     SET branch_name = ELT(FLOOR(1 + (RAND() * 6)), 'Brighton', 'Downtown', 'Mianus', 'Perryridge', 'Redwood', 'RoundHill');
     
@@ -70,38 +57,61 @@ END$$
 
 CREATE PROCEDURE point1()
 BEGIN
+CREATE INDEX idx_branch_name ON accounts(branch_name);
+CREATE INDEX idx_balance ON accounts(balance);
+
 SET @start_time = NOW(6);
-SELECT count(*) FROM accounts  WHERE branch_name = 'Downtown' AND balance = 50000;
+
+	SELECT count(*) FROM accounts FORCE INDEX (idx_branch_name, idx_balance)
+		WHERE branch_name = 'Downtown' AND balance = 50000;
 SET @end_time = NOW(6);
+
 SELECT 
     TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time) AS execution_time_microseconds;
+DROP INDEX idx_branch_name ON accounts;
+DROP INDEX idx_balance ON accounts;
 END$$
 
 CREATE PROCEDURE point2()
 BEGIN
 SET @start_time = NOW(6);
 
+ SELECT count(*) FROM accounts  
+    WHERE branch_name = 'Downtown' AND balance = 50000;
 SET @end_time = NOW(6);
+
 SELECT 
-    TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time) AS execution_time_microseconds;
+	TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time) AS execution_time_microseconds;
 END$$
 
 CREATE PROCEDURE range1()
 BEGIN
+CREATE INDEX idx_branch_name ON accounts(branch_name);
+CREATE INDEX idx_balance ON accounts(balance);
+
 SET @start_time = NOW(6);
 
+	SELECT count(*) FROM accounts FORCE INDEX (idx_branch_name, idx_balance)
+		WHERE branch_name = 'Downtown' AND balance BETWEEN 10000 AND 5000;
+
 SET @end_time = NOW(6);
+
 SELECT 
     TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time) AS execution_time_microseconds;
+DROP INDEX idx_branch_name ON accounts;
+DROP INDEX idx_balance ON accounts;
 END$$
 
 CREATE PROCEDURE range2()
 BEGIN
 SET @start_time = NOW(6);
 
+ SELECT count(*) FROM accounts  
+    WHERE branch_name = 'Downtown' AND balance = 50000;
 SET @end_time = NOW(6);
+
 SELECT 
-    TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time) AS execution_time_microseconds;
+	TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time) AS execution_time_microseconds;
 END$$
 
 -- Reset the delimiter back to the default semicolon
@@ -114,9 +124,9 @@ CALL generate_accounts();
 CALL point1();
 CALL point2();
 CALL range1();
-CALL range2();
+Call range2();
 
-CALL generate_accounts();
+#CALL generate_accounts(); - Decided to just increment them manually
 CALL point1();
 CALL point2();
 CALL range1();
