@@ -93,44 +93,92 @@ END$$
 
 CREATE PROCEDURE point2()
 BEGIN
-SET @start_time = NOW(6);
+DECLARE i INT DEFAULT 1; -- Initialize the loop counter
+DECLARE execution_time_microseconds BIGINT;
 
- SELECT count(*) FROM accounts  
-    WHERE branch_name = 'Downtown' AND balance = 50000;
-SET @end_time = NOW(6);
+WHILE i <= 10 DO
+	SET @start_time = NOW(6);
 
-SELECT 
-	TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time) AS execution_time_microseconds;
+	SELECT count(*) FROM accounts
+		WHERE branch_name = 'Downtown' AND balance = 50000;
+        
+	SET @end_time = NOW(6);
+	SET execution_time_microseconds = TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time);
+    SELECT execution_time_microseconds;
+	INSERT INTO times(TimeInMicroseconds)
+	VALUES
+	(
+	execution_time_microseconds);
+    
+	SET i = i + 1;
+	END WHILE;
+    
+SELECT TimeInMicroseconds From times;
+
 END$$
 
 CREATE PROCEDURE range1()
 BEGIN
+DECLARE i INT DEFAULT 1; -- Initialize the loop counter
+DECLARE execution_time_microseconds BIGINT;
+
 CREATE INDEX idx_branch_name ON accounts(branch_name);
 CREATE INDEX idx_balance ON accounts(balance);
 
-SET @start_time = NOW(6);
+WHILE i <= 10 DO
+	SET @start_time = NOW(6);
 
 	SELECT count(*) FROM accounts FORCE INDEX (idx_branch_name, idx_balance)
 		WHERE branch_name = 'Downtown' AND balance BETWEEN 10000 AND 5000;
+        
+	SET @end_time = NOW(6);
+	SET execution_time_microseconds = TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time);
+    SELECT execution_time_microseconds;
+	INSERT INTO times(TimeInMicroseconds)
+	VALUES
+	(
+	execution_time_microseconds);
+    
+	SET i = i + 1;
+	END WHILE;
+    
+SELECT TimeInMicroseconds From times;
 
-SET @end_time = NOW(6);
-
-#SELECT 
-    #TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time) AS execution_time_microseconds;
 DROP INDEX idx_branch_name ON accounts;
 DROP INDEX idx_balance ON accounts;
 END$$
 
 CREATE PROCEDURE range2()
 BEGIN
-SET @start_time = NOW(6);
+DECLARE i INT DEFAULT 1; -- Initialize the loop counter
+DECLARE execution_time_microseconds BIGINT;
 
- SELECT count(*) FROM accounts  
-    WHERE branch_name = 'Downtown' AND balance = 50000;
-SET @end_time = NOW(6);
+CREATE INDEX idx_branch_name ON accounts(branch_name);
+CREATE INDEX idx_balance ON accounts(balance);
 
-SELECT 
-	TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time) AS execution_time_microseconds;
+WHILE i <= 10 DO
+	SET @start_time = NOW(6);
+
+	SELECT count(*) FROM accounts FORCE INDEX (idx_branch_name, idx_balance)
+		WHERE branch_name = 'Downtown' AND balance BETWEEN 10000 AND 5000;
+        
+	SET @end_time = NOW(6);
+	SET execution_time_microseconds = TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time);
+    SELECT execution_time_microseconds;
+	INSERT INTO times(TimeInMicroseconds)
+	VALUES
+	(
+	execution_time_microseconds);
+    
+	SET i = i + 1;
+	END WHILE;
+    
+SELECT TimeInMicroseconds FROM times
+	ORDER BY TimeInMicroseconds DESC
+	LIMIT 10;
+
+DROP INDEX idx_branch_name ON accounts;
+DROP INDEX idx_balance ON accounts;
 END$$
 
 -- Reset the delimiter back to the default semicolon
@@ -145,12 +193,14 @@ CALL point2();
 CALL range1();
 Call range2();
 Drop table accounts;
+Drop table times;
 CALL generate_accounts(100000);
 CALL point1();
 CALL point2();
 CALL range1();
 Call range2();
 Drop table accounts;
+Drop table times;
 CALL generate_accounts(150000);
 CALL point1();
 CALL point2();
