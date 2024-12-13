@@ -5,10 +5,6 @@ set SQL_SAFE_UPDATES=0;
 
 -- when set, it disables the enforcement of foreign key constraints.
 set FOREIGN_KEY_CHECKS=0;
--- The DB where the accounts table is created
-SHOW SESSION VARIABLES LIKE '%timeout%';       
-SET GLOBAL mysqlx_connect_timeout = 1600;
-SET GLOBAL mysqlx_read_timeout = 1600;
 
  -- Create the time table
 CREATE TABLE IF NOT EXISTS times (
@@ -28,6 +24,21 @@ balance is generated randomly, between 0 and 100,000, rounded to two decimal pla
 ***************************************************************************************************** */
 -- Change delimiter to allow semicolons inside the procedure
 DELIMITER $$
+CREATE PROCEDURE createTimeTable()
+BEGIN
+ -- Create the time table
+CREATE TABLE IF NOT EXISTS times (
+TimeInMicroseconds INT
+);
+
+CREATE TABLE IF NOT EXISTS accounts (
+  account_num CHAR(6) PRIMARY KEY,    -- 5-digit account number (e.g., 00001, 00002, ...)
+  branch_name VARCHAR(50),            -- Branch name (e.g., Brighton, Downtown, etc.)
+  balance DECIMAL(10, 2),             -- Account balance, with two decimal places (e.g., 1000.50)
+  account_type VARCHAR(50)            -- Type of the account (e.g., Savings, Checking)
+);
+END$$
+
 
 CREATE PROCEDURE generate_accounts(IN amount INT)
 BEGIN
@@ -35,10 +46,7 @@ BEGIN
   DECLARE branch_name VARCHAR(50);
   DECLARE account_type VARCHAR(50);
 
-CREATE TABLE IF NOT EXISTS times (
-TimeInMicroseconds INT
-);
-
+CALL createTimeTable;
   -- Loop to generate #of amount account records
   WHILE i <= amount DO
     -- Randomly select a branch from the list of branches
@@ -65,6 +73,7 @@ BEGIN
 DECLARE i INT DEFAULT 1; -- Initialize the loop counter
 DECLARE execution_time_microseconds BIGINT;
 
+CALL createTimeTable();
 CREATE INDEX idx_branch_name ON accounts(branch_name);
 CREATE INDEX idx_balance ON accounts(balance);
 
@@ -85,16 +94,19 @@ WHILE i <= 10 DO
 	SET i = i + 1;
 	END WHILE;
     
-SELECT TimeInMicroseconds From times;
+SELECT TimeInMicroseconds FROM times;
 
 DROP INDEX idx_branch_name ON accounts;
 DROP INDEX idx_balance ON accounts;
+DROP TABLE times;
 END$$
 
 CREATE PROCEDURE point2()
 BEGIN
 DECLARE i INT DEFAULT 1; -- Initialize the loop counter
 DECLARE execution_time_microseconds BIGINT;
+
+CALL createTimeTable();
 
 WHILE i <= 10 DO
 	SET @start_time = NOW(6);
@@ -113,7 +125,8 @@ WHILE i <= 10 DO
 	SET i = i + 1;
 	END WHILE;
     
-SELECT TimeInMicroseconds From times;
+SELECT TimeInMicroseconds FROM times;
+DROP TABLE times;
 
 END$$
 
@@ -125,36 +138,7 @@ DECLARE execution_time_microseconds BIGINT;
 CREATE INDEX idx_branch_name ON accounts(branch_name);
 CREATE INDEX idx_balance ON accounts(balance);
 
-WHILE i <= 10 DO
-	SET @start_time = NOW(6);
-
-	SELECT count(*) FROM accounts FORCE INDEX (idx_branch_name, idx_balance)
-		WHERE branch_name = 'Downtown' AND balance BETWEEN 10000 AND 5000;
-        
-	SET @end_time = NOW(6);
-	SET execution_time_microseconds = TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time);
-    SELECT execution_time_microseconds;
-	INSERT INTO times(TimeInMicroseconds)
-	VALUES
-	(
-	execution_time_microseconds);
-    
-	SET i = i + 1;
-	END WHILE;
-    
-SELECT TimeInMicroseconds From times;
-
-DROP INDEX idx_branch_name ON accounts;
-DROP INDEX idx_balance ON accounts;
-END$$
-
-CREATE PROCEDURE range2()
-BEGIN
-DECLARE i INT DEFAULT 1; -- Initialize the loop counter
-DECLARE execution_time_microseconds BIGINT;
-
-CREATE INDEX idx_branch_name ON accounts(branch_name);
-CREATE INDEX idx_balance ON accounts(balance);
+CALL createTimeTable();
 
 WHILE i <= 10 DO
 	SET @start_time = NOW(6);
@@ -181,19 +165,48 @@ DROP INDEX idx_branch_name ON accounts;
 DROP INDEX idx_balance ON accounts;
 END$$
 
+CREATE PROCEDURE range2()
+BEGIN
+DECLARE i INT DEFAULT 1; -- Initialize the loop counter
+DECLARE execution_time_microseconds BIGINT;
+
+CALL createTimeTable();
+
+WHILE i <= 10 DO
+	SET @start_time = NOW(6);
+
+	SELECT count(*) FROM accounts
+		WHERE branch_name = 'Downtown' AND balance BETWEEN 10000 AND 5000;
+        
+	SET @end_time = NOW(6);
+	SET execution_time_microseconds = TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time);
+    SELECT execution_time_microseconds;
+	INSERT INTO times(TimeInMicroseconds)
+	VALUES
+	(
+	execution_time_microseconds);
+    
+	SET i = i + 1;
+	END WHILE;
+    
+SELECT TimeInMicroseconds FROM times;
+
+END$$
+
 -- Reset the delimiter back to the default semicolon
 DELIMITER ;
 
 -- ******************************************************************
 -- execute the procedure
 -- ******************************************************************
-CALL generate_accounts(50000);
-CALL point1();
-CALL point2();
-CALL range1();
-Call range2();
-Drop table accounts;
-Drop table times;
+CALL generate_accounts(50000); -- Generate accou
+CALL point1(); -- then continue by doing the calls (each call runs 10 times to get the 10 results
+CALL point2(); -- each 1 call is w/indexes and each 2 call is w/out indexes
+CALL range1(); -- at the end of each call, we get a list of 10 run times
+Call range2(); -- this will be the data we use in our report
+Drop table accounts; -- after we are done, we drop both tables to make way for the next run
+Drop table times; -- then we restart all over again, generating 50k more accounts
+
 CALL generate_accounts(100000);
 CALL point1();
 CALL point2();
@@ -201,9 +214,9 @@ CALL range1();
 Call range2();
 Drop table accounts;
 Drop table times;
+
 CALL generate_accounts(150000);
 CALL point1();
 CALL point2();
 CALL range1();
 Call range2();
-#For the rest of these calls, I just manually added the 50k to the generate_accounts() method and restarted from there!
