@@ -17,14 +17,9 @@ CREATE TABLE IF NOT EXISTS accounts (
   balance DECIMAL(10, 2),             -- Account balance, with two decimal places (e.g., 1000.50)
   account_type VARCHAR(50)            -- Type of the account (e.g., Savings, Checking)
 );
-/* ***************************************************************************************************
-The procedure generates 50,000 records for the accounts table, with the account_num padded to 5 digits.
-branch_name is randomly selected from one of the six predefined branches.
-balance is generated randomly, between 0 and 100,000, rounded to two decimal places.
-***************************************************************************************************** */
 -- Change delimiter to allow semicolons inside the procedure
 DELIMITER $$
-CREATE PROCEDURE createTimeTable()
+CREATE PROCEDURE createTimeTable() -- created a procedure to make both tables (time and account)
 BEGIN
  -- Create the time table
 CREATE TABLE IF NOT EXISTS times (
@@ -32,7 +27,7 @@ TimeInMicroseconds INT
 );
 
 CREATE TABLE IF NOT EXISTS accounts (
-  account_num CHAR(6) PRIMARY KEY,    -- 5-digit account number (e.g., 00001, 00002, ...)
+  account_num CHAR(6) PRIMARY KEY,    -- 6-digit account number (e.g., 00001, 00002, ...)
   branch_name VARCHAR(50),            -- Branch name (e.g., Brighton, Downtown, etc.)
   balance DECIMAL(10, 2),             -- Account balance, with two decimal places (e.g., 1000.50)
   account_type VARCHAR(50)            -- Type of the account (e.g., Savings, Checking)
@@ -40,7 +35,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 END$$
 
 
-CREATE PROCEDURE generate_accounts(IN amount INT)
+CREATE PROCEDURE generate_accounts(IN amount INT) -- changed generate accounts to have an in variable to set the amount of items we wish for.
 BEGIN
   DECLARE i INT DEFAULT 1;
   DECLARE branch_name VARCHAR(50);
@@ -71,22 +66,23 @@ END$$
 CREATE PROCEDURE point1()
 BEGIN
 DECLARE i INT DEFAULT 1; -- Initialize the loop counter
-DECLARE execution_time_microseconds BIGINT;
+DECLARE execution_time_microseconds BIGINT; -- Initialize time hholding variable
 
-CALL createTimeTable();
-CREATE INDEX idx_branch_name ON accounts(branch_name);
+CALL createTimeTable(); -- create the tables if they don't exist
+CREATE INDEX idx_branch_name ON accounts(branch_name); -- create indexes now before we count time
 CREATE INDEX idx_balance ON accounts(balance);
 
-WHILE i <= 10 DO
-	SET @start_time = NOW(6);
+WHILE i <= 10 DO -- we do this to gather 10 times
+	SET @start_time = NOW(6); -- starting timer
 
-	SELECT count(*) FROM accounts FORCE INDEX (idx_branch_name, idx_balance)
-		WHERE branch_name = 'Downtown' AND balance = 50000;
+	SELECT count(*) FROM accounts FORCE INDEX (idx_branch_name, idx_balance) -- the main thing, selecting the items from the indexes
+		WHERE branch_name = 'Downtown' AND balance = 50000; 
         
-	SET @end_time = NOW(6);
-	SET execution_time_microseconds = TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time);
-    SELECT execution_time_microseconds;
-	INSERT INTO times(TimeInMicroseconds)
+	SET @end_time = NOW(6); -- ending the timer
+    
+	SET execution_time_microseconds = TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time); -- we then save the time as a variable
+    
+	INSERT INTO times(TimeInMicroseconds) -- then we dump it into times table
 	VALUES
 	(
 	execution_time_microseconds);
@@ -94,7 +90,7 @@ WHILE i <= 10 DO
 	SET i = i + 1;
 	END WHILE;
     
-SELECT TimeInMicroseconds FROM times;
+SELECT TimeInMicroseconds FROM times; -- then we view the list at the end
 
 DROP INDEX idx_branch_name ON accounts;
 DROP INDEX idx_balance ON accounts;
@@ -115,8 +111,9 @@ WHILE i <= 10 DO
 		WHERE branch_name = 'Downtown' AND balance = 50000;
         
 	SET @end_time = NOW(6);
+    
 	SET execution_time_microseconds = TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time);
-    SELECT execution_time_microseconds;
+
 	INSERT INTO times(TimeInMicroseconds)
 	VALUES
 	(
@@ -147,8 +144,9 @@ WHILE i <= 10 DO
 		WHERE branch_name = 'Downtown' AND balance BETWEEN 10000 AND 5000;
         
 	SET @end_time = NOW(6);
+    
 	SET execution_time_microseconds = TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time);
-    SELECT execution_time_microseconds;
+
 	INSERT INTO times(TimeInMicroseconds)
 	VALUES
 	(
@@ -179,8 +177,9 @@ WHILE i <= 10 DO
 		WHERE branch_name = 'Downtown' AND balance BETWEEN 10000 AND 5000;
         
 	SET @end_time = NOW(6);
+    
 	SET execution_time_microseconds = TIMESTAMPDIFF(MICROSECOND, @start_time, @end_time);
-    SELECT execution_time_microseconds;
+
 	INSERT INTO times(TimeInMicroseconds)
 	VALUES
 	(
